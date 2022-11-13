@@ -1,5 +1,5 @@
-import cv2
 from __future__ import division
+import cv2
 from models import *
 from utils.utils import *
 from utils.datasets import *
