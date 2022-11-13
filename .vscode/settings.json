@@ -1,0 +1,10 @@
+{
+	"python.linting.pylintArgs": ["--generated-members=cv2.*"],
+	"python.linting.mypyArgs": [
+		"--follow-imports=silent",
+		"--ignore-missing-imports",
+		"--show-column-numbers",
+		"--no-pretty",
+		" \"--extension-pkg-whitelist=\""
+	]
+}
