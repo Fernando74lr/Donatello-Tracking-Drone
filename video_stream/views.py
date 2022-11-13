@@ -2,6 +2,8 @@ from django.http.response import StreamingHttpResponse
 from video_stream.camera import Donatello
 from django.shortcuts import render
 from django.http import JsonResponse
+from models import *
+from utils.utils import *
 
 
 # Create Donatello object
@@ -13,13 +15,14 @@ def index(request):
     return render(request, 'video_stream/index.html')
 
 
-# Generate frame
+# Generate normal frame
 def generare_frame():
     # global drone
     # Infinite loop
     while True:
         # Get resized, flipped and encoded img
-        img = drone.get_frame()
+        # img = drone.get_frame()
+        img = drone.generare_frame_ctrl()
         # Yield frame with its content-type
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n\r\n')
