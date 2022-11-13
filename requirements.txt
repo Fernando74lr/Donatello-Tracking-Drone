@@ -57,5 +57,3 @@ zipp==3.1.0
 djitellopy==2.4.0
 pygame==2.1.2
 simple_pid==1.0.1
-numpy==1.19.5
-matplotlib==3.3.4
