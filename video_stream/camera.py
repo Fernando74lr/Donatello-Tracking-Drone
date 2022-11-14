@@ -54,7 +54,7 @@ class Donatello(object):
         self.pidForXaxis.output_limits = (-80, 80)
 
         # Default option menu
-        self.optionMenu = 2 
+        self.optionMenu = 0
 
         ''' COLOR DETECTION '''
 
@@ -344,8 +344,10 @@ class Donatello(object):
                                 print("Persona y bici ALV ALV ALV")
                                 print(centerPersons[j])
                                 cv2.circle(frame, (centerBicycles[i][0], centerBicycles[i][1]), 20, (120, 0, 200), cv2.FILLED) # Shows the center of the bicycle
-                                cv2.circle(frame, (centerPersons[j][0], centerPersons[j][1]), 20, (0, 0, 255), cv2.FILLED) # Shows the center of the tracked person 
-                                
+                                cv2.circle(frame, (centerPersons[j][0], centerPersons[j][1]), 20, (0, 0, 255), cv2.FILLED) # Shows the center of the tracked person
+                                infoForPID = [(centerBicycles[i][0], centerBicycles[i][1]), areaBicycles[i]]
+                                pidTello.track(
+                                    self.donatello, self.pidForYaw, self.pidForZaxis, self.pidForXaxis, infoForPID, self.fbRange)
                                 break
         print("\nOPTION MODE: \n", self.optionMenu)
 
