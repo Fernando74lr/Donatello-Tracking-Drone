@@ -1,6 +1,6 @@
 from datetime import date, datetime
 import imp
-import keyPressModule as kp
+import video_stream.keyPressModule as kp
 import time
 import cv2
 

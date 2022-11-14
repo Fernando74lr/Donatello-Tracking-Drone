@@ -1,18 +1,18 @@
 from __future__ import division
 import cv2
+import argparse
 from models import *
 from utils.utils import *
 from utils.datasets import *
-import argparse
+from oauth2client import tools
 import torch
 from torch.autograd import Variable
 import cv2
-
+import pathlib
 # FOR TELLO
 from djitellopy import tello
 from simple_pid import PID
-import keyControl
-import pidTello
+from video_stream import pidTello
 
 
 class Donatello(object):
@@ -20,8 +20,16 @@ class Donatello(object):
         # Donatello obj
         self.donatello = tello.Tello()
 
+        try:
+            self.donatello.connect()
+            self.donatello.streamon()
+            print(f'\nConnected succesfully!\n')
+        except Exception as error:
+            print(f'\nError trying to connect:\n{error}\n')
+
         # Image size (width, height)
         self.w, self.h = 1080, 720
+
 
         # Desired range
         self.fbRange = [40000, 80000]
@@ -58,14 +66,17 @@ class Donatello(object):
 
         # ARGUMENTS
         self.parser = argparse.ArgumentParser()
+        # self.parser = tools.argparser.parse_args([])
+        self.parser.add_argument("runserver", type=str,
+                                 help="RUNSERVER DJANGO")
         self.parser.add_argument("--image_folder", type=str,
                                  default="../data/samples", help="path to dataset")
         self.parser.add_argument("--model_def", type=str,
-                                 default="../config/yolov3.cfg", help="path to model definition file")
+                                 default="config/yolov3.cfg", help="path to model definition file")
         self.parser.add_argument("--weights_path", type=str,
-                                 default="../weights/yolov3.weights", help="path to weights file")
+                                 default="weights/yolov3.weights", help="path to weights file")
         self.parser.add_argument("--class_path", type=str,
-                                 default="../data/coco.names", help="path to class label file")
+                                 default="data/coco.names", help="path to class label file")
         self.parser.add_argument("--conf_thres", type=float,
                                  default=0.8, help="object confidence threshold")
         self.parser.add_argument("--webcam", type=int, default=1,
@@ -85,7 +96,10 @@ class Donatello(object):
 
         # Define opt
         self.opt = self.parser.parse_args()
+        print()
+        print('EL OPT ALV')
         print(self.opt)
+        print()
 
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
@@ -94,7 +108,7 @@ class Donatello(object):
                              img_size=self.opt.img_size).to(self.device)
 
         # Load weights
-        if self.opt.weights_path.endswith("../weights"):
+        if self.opt.weights_path.endswith(".weights"):
             self.model.load_darknet_weights(self.opt.weights_path)
         else:
             self.model.load_state_dict(torch.load(self.opt.weights_path))
@@ -107,12 +121,6 @@ class Donatello(object):
             0, 255, size=(len(self.classes), 3), dtype="uint8")
         self.a = []
 
-        try:
-            self.donatello.connect()
-            self.donatello.streamon()
-            print(f'\nConnected succesfully!\n')
-        except Exception as error:
-            print(f'\nError trying to connect:\n{error}\n')
 
     def Convertir_RGB(self, img):
         # Convertir Blue, green, red a Red, green, blue
@@ -192,13 +200,15 @@ class Donatello(object):
         imgTensor = Variable(imgTensor.type(self.Tensor))
 
         # Keyboard Control
+        '''
         lr, fb, ud, yv, optionMenu = keyControl.getKeyboardInput(
             self.donatello, optionMenu, frame)
         if (optionMenu == 0):
             self.donatello.send_rc_control(lr, fb, ud, yv)
+        '''
 
         # YOLO
-        if (optionMenu == 1):
+        if (self.optionMenu == 1):
             with torch.no_grad():
                 detections = self.model(imgTensor)
                 detections = non_max_suppression(
@@ -257,11 +267,12 @@ class Donatello(object):
                             print("No se detecto persona")
                             self.donatello.send_rc_control(0, 0, 0, 0)
 
-        print("\nOPTION MODE: \n", optionMenu)
+        print("\nOPTION MODE: \n", self.optionMenu)
 
         # Convert to BRG
+        #return self.Convertir_BGR(RGBimg)
         frame = self.Convertir_BGR(RGBimg)
-
+        
         # Resize with defined width and height
         frame = cv2.resize(frame, (self.w, self.h))
 
@@ -270,8 +281,8 @@ class Donatello(object):
 
         # Encode image and convert it to 'jpg' format
         _, img = cv2.imencode('.jpg', frame_flip)
-
         return img.tobytes()
+        
 
     def get_frame(self):
         # Get frame from camera
