@@ -150,7 +150,14 @@ if __name__ == "__main__":
         existsPerson = False
         existsBicycle = False
         infoPerson = []
+        centerPersons = []
+        areaPersons = []
+
         infoBicycle = []
+        centerBicycles = []
+        areaBicycles = []
+        xValuesBic = []
+
         for detection in detections:
             if detection is not None:
                 detection = rescale_boxes(detection, opt.img_size, RGBimg.shape[:2])
@@ -161,17 +168,23 @@ if __name__ == "__main__":
                     color = [int(c) for c in colors[int(cls_pred)]]
                     # Only for person detection
 
+                    # Person
                     if cls_pred == 0:
                         existsPerson = True
-                        areaPerson = int(box_w*box_h)
-                        centerPerson = [int(x1+box_w//2), int(y1+box_h//2)]
-                        infoPerson.append([centerPerson, areaPerson])
-
+                        arPer = int(box_w*box_h)
+                        cenPer = [int(x1+box_w//2), int(y1+box_h//2)]
+                        centerPersons.append(cenPer)
+                        areaPersons.append(arPer)
+                        infoPerson.append([cenPer, arPer])
+                    # Bicycle
                     if cls_pred == 1:
                         existsBicycle = True
-                        areaBicycle = int(box_w*box_h)
-                        centerBicycle = [int(x1+box_w//2), int(y1+box_h//2)]
-                        infoBicycle.append([centerBicycle, areaBicycle])
+                        areaBic = int(box_w*box_h)
+                        cenBic = [int(x1+box_w//2), int(y1+box_h//2)]
+                        centerBicycles.append(cenBic)
+                        areaBicycles.append(areaBic)
+                        infoBicycle.append([cenBic, areaBic])
+                        xValuesBic.append([int(x1), int(x2)])
 
 
                     if cls_pred == 1 or cls_pred == 0:
@@ -190,22 +203,42 @@ if __name__ == "__main__":
                         # Some references:
                         # cv2.circle(frame, (w//2, h//2), 5, (255, 0, 0), cv2.FILLED) # Shows the center of the frame
                         # cv2.rectangle(frame, (w//4, h//4), (3*w//4, 3*h//4), (255, 0, 0), 2)
-                        booleanExpresion = colorCenterX > int(x1) and colorCenterX < int(x2) and colorCenterY > int(y1) and colorCenterY < int(y2)
+                        # booleanExpresion = colorCenterX > int(x1) and colorCenterX < int(x2) and colorCenterY > int(y1) and colorCenterY < int(y2)
                         # print("orangeCenter: ", colorCenterX, ", ", colorCenterY)
                         # print(booleanExpresion)
-                        if booleanExpresion:
-                            print("Persona con color naranja")
-                            cv2.circle(frame, (c[0], c[1]), 20, (0, 0, 255), cv2.FILLED)
-                        else:
-                            print("No hay persona con color naranja")
+                        # if booleanExpresion:
+                        #     print("Persona con color naranja")
+                        #     cv2.circle(frame, (c[0], c[1]), 20, (0, 0, 255), cv2.FILLED)
+                        # else:
+                        #     print("No hay persona con color naranja")
                     else:
-                        print("No se detecto persona xd ")
+                        print("No se detecto persona u bici")
                         # print("Se detectó {} en X1: {}, Y1: {}, X2: {}, Y2: {}".format(classes[int(cls_pred)], x1, y1, x2, y2))
+
+                # Checks if the two objects exists in the same frame
                 isPair = existsPerson & existsBicycle
-                print("     Existen los dos en un frame alv: ", isPair)
                 if isPair:
-                    print("Persona(s): ", infoPerson)
-                    print("Bici(s): ", infoBicycle)
+                    # print("Persona(s): ", infoPerson)
+                    # print("Bici(s): ", infoBicycle)
+
+                    # Look for the biggest bicycle
+                    i = areaBicycles.index(max(areaBicycles))
+                    j = -1
+
+                    for index in range(len(centerPersons)):
+                        # print(centerPersons[index])
+                        # print(xValuesBic[i])
+                        if centerPersons[index][0] > xValuesBic[i][0] and centerPersons[index][0] > xValuesBic[i][0]:
+                            j = index
+                            print("Persona y bici ALV ALV ALV")
+                            print(centerPersons[j])
+                            cv2.circle(frame, (centerBicycles[i][0], centerBicycles[i][1]), 20, (120, 0, 200), cv2.FILLED) # Shows the center of the bicycle
+                            cv2.circle(frame, (centerPersons[j][0], centerPersons[j][1]), 20, (0, 0, 255), cv2.FILLED) # Shows the center of the tracked person 
+                            
+                            break
+                    
+                    
+
         #
         #Convertimos de vuelta a BGR para que cv2 pueda desplegarlo en los colores correctos
         
