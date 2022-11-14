@@ -54,7 +54,7 @@ class Donatello(object):
         self.pidForXaxis.output_limits = (-80, 80)
 
         # Default option menu
-        self.optionMenu = 0
+        self.optionMenu = 2 
 
         ''' COLOR DETECTION '''
 
@@ -207,7 +207,7 @@ class Donatello(object):
             self.donatello.send_rc_control(lr, fb, ud, yv)
         '''
 
-        # YOLO
+        # YOLO Person + ColorTracking
         if (self.optionMenu == 1):
             with torch.no_grad():
                 detections = self.model(imgTensor)
@@ -267,6 +267,86 @@ class Donatello(object):
                             print("No se detecto persona")
                             self.donatello.send_rc_control(0, 0, 0, 0)
 
+        if(self.optionMenu == 2):
+            with torch.no_grad():
+                detections = self.model(imgTensor)
+                detections = non_max_suppression(detections, self.opt.conf_thres, self.opt.nms_thres)
+
+            existsPerson = False
+            existsBicycle = False
+            infoPerson = []
+            centerPersons = []
+            areaPersons = []
+
+            infoBicycle = []
+            centerBicycles = []
+            areaBicycles = []
+            xValuesBic = []
+
+            for detection in detections:
+                if detection is not None:
+                    detection = rescale_boxes(detection, self.opt.img_size, RGBimg.shape[:2])
+                    for x1, y1, x2, y2, conf, cls_conf, cls_pred in detection:
+                        box_w = x2 - x1
+                        box_h = y2 - y1
+                        color = [int(c) for c in self.colors[int(cls_pred)]]
+                        # Only for person detection
+
+                        # Person
+                        if cls_pred == 0:
+                            existsPerson = True
+                            arPer = int(box_w*box_h)
+                            cenPer = [int(x1+box_w//2), int(y1+box_h//2)]
+                            centerPersons.append(cenPer)
+                            areaPersons.append(arPer)
+                            infoPerson.append([cenPer, arPer])
+                        # Bicycle
+                        if cls_pred == 1:
+                            existsBicycle = True
+                            areaBic = int(box_w*box_h)
+                            cenBic = [int(x1+box_w//2), int(y1+box_h//2)]
+                            centerBicycles.append(cenBic)
+                            areaBicycles.append(areaBic)
+                            infoBicycle.append([cenBic, areaBic])
+                            xValuesBic.append([int(x1), int(x2)])
+
+
+                        if cls_pred == 1 or cls_pred == 0:
+                            # print("Se detectó {} en X1: {}, Y1: {}, X2: {}, Y2: {}".format(self.classes[int(cls_pred)], x1, y1, x2, y2))
+                            frame = cv2.rectangle(frame, (x1, y1 + box_h), (x2, y1), color, 5)
+                            cv2.rectangle(frame, (x1, y1 + box_h), (x2, y1), color, 2)
+                            cv2.putText(frame, self.classes[int(cls_pred)], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)# Nombre de la clase detectada
+                            cv2.putText(frame, str("%.2f" % float(conf)), (x2, y2 - box_h), cv2.FONT_HERSHEY_SIMPLEX, 0.5,color, 2) # Certeza de prediccion de la clase
+                            
+                            area = int(box_w*box_h)
+                            c = [int(x1+box_w//2), int(y1+box_h//2)]
+                            info = [c, area]
+                            # print("c: {}, {}     area: {}".format(c[0], c[1], area))
+                            cv2.circle(frame, (c[0], c[1]), 5, (0, 255, 0), cv2.FILLED) # Shows the center of the rectangle/face
+
+                            # Some references:
+                            cv2.circle(frame, (self.w//2, self.h//2), 5, (200, 0, 255), cv2.FILLED) # Shows the center of the frame
+                            cv2.rectangle(frame, (self.w//4, self.h//4), (3*self.w//4, 3*self.h//4), (200, 0, 255), 2)
+                        else:
+                            print("No se detecto persona u bici")
+                            # print("Se detectó {} en X1: {}, Y1: {}, X2: {}, Y2: {}".format(self.classes[int(cls_pred)], x1, y1, x2, y2))
+
+                    # Checks if the two objects exists in the same frame
+                    isPair = existsPerson & existsBicycle
+                    if isPair:
+                        # Look for the biggest bicycle
+                        i = areaBicycles.index(max(areaBicycles))
+                        j = -1
+
+                        for index in range(len(centerPersons)):
+                            if centerPersons[index][0] > xValuesBic[i][0] and centerPersons[index][0] > xValuesBic[i][0]:
+                                j = index
+                                print("Persona y bici ALV ALV ALV")
+                                print(centerPersons[j])
+                                cv2.circle(frame, (centerBicycles[i][0], centerBicycles[i][1]), 20, (120, 0, 200), cv2.FILLED) # Shows the center of the bicycle
+                                cv2.circle(frame, (centerPersons[j][0], centerPersons[j][1]), 20, (0, 0, 255), cv2.FILLED) # Shows the center of the tracked person 
+                                
+                                break
         print("\nOPTION MODE: \n", self.optionMenu)
 
         # Convert to BRG
