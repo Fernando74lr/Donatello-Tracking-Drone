@@ -30,6 +30,7 @@ setInterval(function () {
 			- Up
 			- Down
 		· Take photo
+		· Change modes
 */
 const perform_action = (action) => {
 	console.log(action.toUpperCase());

@@ -20,4 +20,8 @@ urlpatterns = [
     path('get_params', views.get_params, name='get_params'),
     # Take photo
     path('take_photo', views.get_params, name='take_photo'),
+    # Mode
+    path('mode0', views.mode0, name='mode0'),
+    path('mode1', views.mode1, name='mode1'),
+    path('mode2', views.mode2, name='mode2'),
 ]

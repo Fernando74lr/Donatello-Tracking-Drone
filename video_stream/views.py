@@ -40,6 +40,33 @@ def get_params(request):
     return JsonResponse({"height": height, "battery": battery, "temperature": temperature, "yaw": yaw, "flight_time": flight_time, "speed": speed})
 
 
+# Mode 0
+def mode0(request):
+    try:
+        drone.optionMenu = 0
+        return JsonResponse({"ok": True, "msg": 'Changed to mode0'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode0'})
+
+
+# Mode 1
+def mode1(request):
+    try:
+        drone.optionMenu = 1
+        return JsonResponse({"ok": True, "msg": 'Changed to mode1'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode1'})
+
+
+# Mode 2
+def mode2(request):
+    try:
+        drone.optionMenu = 2
+        return JsonResponse({"ok": True, "msg": 'Changed to mode2'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode2'})
+
+
 # Start
 def take_off(request):
     try:
