@@ -8,6 +8,7 @@ from utils.utils import *
 
 # Create Donatello object
 drone = Donatello()
+# drone.generare_frame_ctrl()
 
 
 # Index

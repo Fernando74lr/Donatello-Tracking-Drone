@@ -9,6 +9,7 @@ import cv2
 from PIL import Image
 import torch
 from torch.autograd import Variable
+from datetime import date, datetime
 
 # FOR TELLO
 from djitellopy import tello
@@ -30,10 +31,10 @@ donatello.streamon()
 
 # Global variables
 w, h = 1080, 720          # Image size
-fbRange = [40000, 80000]  # Desired Range
+fbRange = [200, 400]  # Desired Range
 pError = 0
 
-# Simple PID
+# Simple PID for Person + Color
 pidForYaw = PID(0.18, 0.00005, 0.01, setpoint=w//2)    # Pid object for yaw
 pidForYaw.output_limits = (-100, 100)      # yawSpeed limits
 
@@ -44,6 +45,18 @@ pidForZaxis.output_limits = (-100, 100)      # updownSpeed limits
 pidForXaxis = PID(0.001, 0.00001, 0.0001, setpoint=(
     fbRange[1] + fbRange[0])//2)    # Pid object for X axis
 pidForXaxis.output_limits = (-80, 80)      # forwardspeed limits
+
+# Simple PID for Person + Bicycle
+pidForYawBic = PID(0.12, 0.000001, 0.001, setpoint=w//2)    # Pid object for yaw
+pidForYawBic.output_limits = (-100, 100)      # yawSpeed limits
+
+pidForZaxisBic = PID(0.3, 0.00001, 0.0001, setpoint=h //
+                  2)    # Pid object for Z axis
+pidForZaxisBic.output_limits = (-100, 100)      # updownSpeed limits
+
+pidForXaxisBic = PID(0.8, 0.00005, 0.001, setpoint=(
+    fbRange[1] + fbRange[0])//2)    # Pid object for X axis
+pidForXaxisBic.output_limits = (-80, 80)      # forwardspeed limits
 
 optionMenu = 0
 
@@ -167,7 +180,10 @@ if __name__ == "__main__":
     #     # frame_width = int(cap.get(3))
     #     # frame_height = int(cap.get(4))
     #     out = cv2.VideoWriter('outp.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (1280,960))
-    ### out = cv2.VideoWriter('outp.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (1280,960))
+    
+    # output 
+    out = cv2.VideoWriter(f'output{datetime.timestamp(datetime.now())}.avi', cv2.VideoWriter_fourcc(*'MPEG'), 12, (w, h))
+    
     colors = np.random.randint(0, 255, size=(len(classes), 3), dtype="uint8")
     a = []
 
@@ -180,6 +196,7 @@ if __name__ == "__main__":
         # Get frames from Tello cam
         frame = donatello.get_frame_read().frame
         frame = cv2.resize(frame, (w, h), interpolation=cv2.INTER_CUBIC)
+        out.write(frame)
 
         # For color detection:
         colorCenterX, colorCenterY = colorDetection(frame)
@@ -193,6 +210,7 @@ if __name__ == "__main__":
         imgTensor = Variable(imgTensor.type(Tensor))
 
         # Keyboard Control
+        # print('getting key path')
         lr, fb, ud, yv, optionMenu = keyControl.getKeyboardInput(
             donatello, optionMenu, frame)
         if (optionMenu == 0):
@@ -257,7 +275,90 @@ if __name__ == "__main__":
                         else:
                             print("No se detecto persona")
                             donatello.send_rc_control(0, 0, 0, 0)
+        if(optionMenu == 2):
+            with torch.no_grad():
+                detections = model(imgTensor)
+                detections = non_max_suppression(detections, opt.conf_thres, opt.nms_thres)
 
+            existsPerson = False
+            existsBicycle = False
+            infoPerson = []
+            centerPersons = []
+            areaPersons = []
+
+            infoBicycle = []
+            centerBicycles = []
+            areaBicycles = []
+            xValuesBic = []
+
+            for detection in detections:
+                if detection is not None:
+                    detection = rescale_boxes(detection, opt.img_size, RGBimg.shape[:2])
+                    for x1, y1, x2, y2, conf, cls_conf, cls_pred in detection:
+                        box_w = x2 - x1
+                        box_h = y2 - y1
+                        color = [int(c) for c in colors[int(cls_pred)]]
+                        # Only for person detection
+
+                        # Person
+                        if cls_pred == 0:
+                            existsPerson = True
+                            arPer = int(box_w*box_h)
+                            cenPer = [int(x1+box_w//2), int(y1+box_h//2)]
+                            centerPersons.append(cenPer)
+                            areaPersons.append(arPer)
+                            infoPerson.append([cenPer, arPer])
+                        # Bicycle
+                        if cls_pred == 1:
+                            existsBicycle = True
+                            # areaBic = int(box_w*box_h)
+                            areaBic = int(box_h)
+                            cenBic = [int(x1+box_w//2), int(y1+box_h//2)]
+                            centerBicycles.append(cenBic)
+                            areaBicycles.append(areaBic)
+                            infoBicycle.append([cenBic, areaBic])
+                            xValuesBic.append([int(x1), int(x2)])
+
+
+                        if cls_pred == 1 or cls_pred == 0:
+                            # print("Se detectó {} en X1: {}, Y1: {}, X2: {}, Y2: {}".format(classes[int(cls_pred)], x1, y1, x2, y2))
+                            frame = cv2.rectangle(frame, (x1, y1 + box_h), (x2, y1), color, 5)
+                            cv2.rectangle(frame, (x1, y1 + box_h), (x2, y1), color, 2)
+                            cv2.putText(frame, classes[int(cls_pred)], (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)# Nombre de la clase detectada
+                            cv2.putText(frame, str("%.2f" % float(conf)), (x2, y2 - box_h), cv2.FONT_HERSHEY_SIMPLEX, 0.5,color, 2) # Certeza de prediccion de la clase
+                            
+                            area = int(box_w*box_h)
+                            c = [int(x1+box_w//2), int(y1+box_h//2)]
+                            info = [c, area]
+                            # print("c: {}, {}     area: {}".format(c[0], c[1], area))
+                            cv2.circle(frame, (c[0], c[1]), 5, (0, 255, 0), cv2.FILLED) # Shows the center of the rectangle/face
+
+                            # Some references:
+                            cv2.circle(frame, (w//2, h//2), 5, (200, 0, 255), cv2.FILLED) # Shows the center of the frame
+                            cv2.rectangle(frame, (w//4, h//4), (3*w//4, 3*h//4), (200, 0, 255), 2)
+                        else:
+                            print("No se detecto persona u bici")
+                            # print("Se detectó {} en X1: {}, Y1: {}, X2: {}, Y2: {}".format(classes[int(cls_pred)], x1, y1, x2, y2))
+
+                    # Checks if the two objects exists in the same frame
+                    isPair = existsPerson & existsBicycle
+                    if isPair:
+                        # Look for the biggest bicycle
+                        i = areaBicycles.index(max(areaBicycles))
+                        j = -1
+
+                        for index in range(len(centerPersons)):
+                            if centerPersons[index][0] > xValuesBic[i][0] and centerPersons[index][0] > xValuesBic[i][0]:
+                                j = index
+                                print("Persona y bici ALV ALV ALV")
+                                print(centerPersons[j])
+                                cv2.circle(frame, (centerBicycles[i][0], centerBicycles[i][1]), 20, (120, 0, 200), cv2.FILLED) # Shows the center of the bicycle
+                                cv2.circle(frame, (centerPersons[j][0], centerPersons[j][1]), 20, (0, 0, 255), cv2.FILLED) # Shows the center of the tracked person
+                                infoForPID = [(centerBicycles[i][0], centerBicycles[i][1]), areaBicycles[i]]
+                                pidTello.track(
+                                    donatello, pidForYawBic, pidForZaxisBic, pidForXaxisBic, infoForPID, fbRange)
+                                print("Alto Bici: ", areaBicycles[i])
+                                break
         # # BodyTracking
         # if(optionMenu == 2):
         #     # Look for the biggest body and track it
@@ -265,10 +366,9 @@ if __name__ == "__main__":
         #     pidTello.track(donatello, pidForYaw, pidForZaxis, pidForXaxis, info, fbRange)
 
         # Convertimos de vuelta a BGR para que cv2 pueda desplegarlo en los colores correctos
-        print("OPTION MODE: ", optionMenu)
+        # print("OPTION MODE: ", optionMenu)
 
         cv2.imshow('frame', Convertir_BGR(RGBimg))
-        # out.write(RGBimg)
         # if opt.webcam==1:
         #     cv2.imshow('frame', Convertir_BGR(RGBimg))
         #     out.write(RGBimg)
@@ -279,6 +379,6 @@ if __name__ == "__main__":
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
-    # out.release()
+    out.release()
     # cap.release()
     cv2.destroyAllWindows()

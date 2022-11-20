@@ -14,9 +14,11 @@ const get_params = () => {
 		.catch((error) => console.log(error));
 };
 
+/*
 setInterval(function () {
 	get_params();
-}, 5000);
+}, 10 * 1000);
+*/
 
 /*
 	Actions:
@@ -33,8 +35,10 @@ setInterval(function () {
 		· Change modes
 */
 const perform_action = (action) => {
-	console.log(action.toUpperCase());
 	axios(`http://127.0.0.1:8000/${action}`)
-		.then(({ data }) => console.log(data))
+		.then(({ data }) => console.log({
+			action: action.toUpperCase(),
+			...data
+		}))
 		.catch((error) => console.log(error));
 };

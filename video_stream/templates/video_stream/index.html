@@ -19,6 +19,24 @@
 			rel="stylesheet"
 			href="{% static 'video_stream/css/bootstrap.min.css' %}"
 		/>
+
+		<!-- JS -->
+		<script
+			type="text/javascript"
+			src="{% static 'video_stream/js/jquery.min.js' %}"
+		></script>
+		<script
+			type="text/javascript"
+			src="{% static 'video_stream/js/axios.min.js' %}"
+		></script>
+		<script
+			type="text/javascript"
+			src="{% static 'video_stream/js/bootstrap.bundle.min' %}"
+		></script>
+		<script
+			type="text/javascript"
+			src="{% static 'video_stream/js/main.js' %}"
+		></script>
 	</head>
 
 	<body>
@@ -29,6 +47,8 @@
 		<button onclick="perform_action('mode0')">MODE 0</button>
 		<button onclick="perform_action('mode1')">MODE 1</button>
 		<button onclick="perform_action('mode2')">MODE 2</button>
+		<button onclick="perform_action('forward')">FORWARD</button>
+		<button onclick="perform_action('backward')">BACKWARD</button>
 		<div id="container" class="container-fluid">
 			<div id="left-side" class="blue row">
 				<div class="col green">
@@ -171,26 +191,10 @@
 			<div id="right-side" class="green row">
 				<div id="video-drn">
 					<img id="img-drn" src="{% url 'video_feed' %}" />
-					<div id="img-drn"></div>
+					<!-- <div id="img-drn"></div>-->
 				</div>
 			</div>
 		</div>
-		<!-- JS -->
-		<script
-			type="text/javascript"
-			src="{% static 'video_stream/js/jquery.min.js' %}"
-		></script>
-		<script
-			type="text/javascript"
-			src="{% static 'video_stream/js/axios.min.js' %}"
-		></script>
-		<script
-			type="text/javascript"
-			src="{% static 'video_stream/js/bootstrap.bundle.min' %}"
-		></script>
-		<script
-			type="text/javascript"
-			src="{% static 'video_stream/js/main.js' %}"
-		></script>
+
 	</body>
 </html>
