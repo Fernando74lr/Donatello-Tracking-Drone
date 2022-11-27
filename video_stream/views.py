@@ -81,6 +81,7 @@ def take_off(request):
 def land(request):
     try:
         drone.donatello.land()
+        drone.out.release()
         return JsonResponse({"ok": True})
     except:
         return JsonResponse({"ok": False})

@@ -9,6 +9,8 @@ import torch
 from torch.autograd import Variable
 import cv2
 import pathlib
+from datetime import date, datetime
+
 # FOR TELLO
 from djitellopy import tello
 from simple_pid import PID
@@ -138,6 +140,8 @@ class Donatello(object):
             0, 255, size=(len(self.classes), 3), dtype="uint8")
         self.a = []
 
+        self.out = cv2.VideoWriter(f'output{datetime.timestamp(datetime.now())}.avi', cv2.VideoWriter_fourcc(*'MPEG'), 12, (self.w, self.h))
+
         # self.generare_frame_ctrl()
 
 
@@ -206,6 +210,7 @@ class Donatello(object):
             frame = self.donatello.get_frame_read().frame
             frame = cv2.resize(frame, (self.w, self.h),
                             interpolation=cv2.INTER_CUBIC)
+            self.out.write(frame)
 
             # For color detection:
             colorCenterX, colorCenterY = self.colorDetection(frame)
