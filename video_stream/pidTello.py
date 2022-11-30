@@ -34,7 +34,6 @@ def track(donatello, pidForYaw, pidForZaxis, pidForXaxis, info, fbRange):
 
     # # Paralel control (Proposal):
     donatello.send_rc_control(0, forwardSpeed, updownSpeed, yawSpeed)
-
     # donatello.send_rc_control(0, 0, 0, yawSpeed)
     # donatello.send_rc_control(0, 0, updownSpeed, 0)
     # donatello.send_rc_control(0, forwardSpeed, 0, 0)

@@ -8,8 +8,6 @@ logs
 comandos.txt
 data/custom/labels/*.txt
 
-
-
 train.txt
 valid.txt
 get_coco_dataset.sh

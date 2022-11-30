@@ -2,10 +2,13 @@ from django.http.response import StreamingHttpResponse
 from video_stream.camera import Donatello
 from django.shortcuts import render
 from django.http import JsonResponse
+from models import *
+from utils.utils import *
 
 
 # Create Donatello object
 drone = Donatello()
+# drone.generare_frame_ctrl()
 
 
 # Index
@@ -13,13 +16,14 @@ def index(request):
     return render(request, 'video_stream/index.html')
 
 
-# Generate frame
+# Generate normal frame
 def generare_frame():
     # global drone
     # Infinite loop
     while True:
         # Get resized, flipped and encoded img
-        img = drone.get_frame()
+        # img = drone.get_frame()
+        img = drone.generare_frame_ctrl()
         # Yield frame with its content-type
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n\r\n')
@@ -37,6 +41,33 @@ def get_params(request):
     return JsonResponse({"height": height, "battery": battery, "temperature": temperature, "yaw": yaw, "flight_time": flight_time, "speed": speed})
 
 
+# Mode 0
+def mode0(request):
+    try:
+        drone.optionMenu = 0
+        return JsonResponse({"ok": True, "msg": 'Changed to mode0'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode0'})
+
+
+# Mode 1
+def mode1(request):
+    try:
+        drone.optionMenu = 1
+        return JsonResponse({"ok": True, "msg": 'Changed to mode1'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode1'})
+
+
+# Mode 2
+def mode2(request):
+    try:
+        drone.optionMenu = 2
+        return JsonResponse({"ok": True, "msg": 'Changed to mode2'})
+    except:
+        return JsonResponse({"ok": False, "msg": 'Error changing to mode2'})
+
+
 # Start
 def take_off(request):
     try:
@@ -50,6 +81,7 @@ def take_off(request):
 def land(request):
     try:
         drone.donatello.land()
+        drone.out.release()
         return JsonResponse({"ok": True})
     except:
         return JsonResponse({"ok": False})
