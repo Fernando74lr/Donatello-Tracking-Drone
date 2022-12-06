@@ -1,92 +1,59 @@
 # Vision Tracking Drone Guided by Deep Convolutional Neural Network for Recording Third-Person Cycling Scenes
-Este repo basado en el proyecto [PyTorch YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3) para correr detección de objetos sobre video. Construí sobre este proyecto para añadir la capacidad de detectar objetos en un stream de video en vivo.
+En los últimos años los drones han tomado gran relevancia en tecnologías de vanguardia, por lo que hoy en día los drones más modernos pueden ser controlados a grandes distancias y cuentan con diferentes elementos como como cámaras, sensores, GPS, entre otros, haciéndolos perfectos para uso en múltiples entornos de trabajo, proyectos, oportunidades y más. Los drones de rastreo son capaces de apuntar a objetos específicos y pueden proporcionar resultados increíbles para la fotografía y grabación de vídeo, pudiendo capturar planos, puntos de vista y ángulos que por otros medios convencionales serían muy difíciles. El objetivo de este proyecto es desarrollar un dron de seguimiento de ciclistas para grabar escenas en perspectiva de tercera persona. Los resultados obtenidos en este proyecto muestran un vuelo completamente autónomo mediante un triple controlador PID trabajando en paralelo, lo que se consiguió gracias al algoritmo de visión mediante red neuronal convolucional profunda convolucional que fue bastante preciso y óptimo, obteniendo al final de la rutina la grabación correspondiente, además cuenta con una interfaz amigable e intuitiva para el usuario final
 
-[YOLO](https://pjreddie.com/darknet/yolo/) es un modelo el cual esta optimizado para generar detecciones de elementos a una velocidad muy alta, es por eso que es una muy buena opción para usarlo en video. Tanto el entrenamiento como predicciones con este modelo se ven beneficiadas si se cumple con una computadora que tenga una GPU NVIDIA.
+[YOLO](https://pjreddie.com/darknet/yolo/) es un modelo capaz de detectar 80 diferentes objetos que fueron previamente entrenados, y dentro de ellos se encuentran nuestros dos objetivos, una persona y una bicicleta. Este algoritmo se llama as ́ı (You Only Look Once) ya que solo necesita de un solo frame para detectar cualquier objeto que esté presente dentro de las clases permitidas. Además de ser muy rápido y ser beneficiado si se corre en una GPU NVIDIA utilizando [CUDA](https://developer.nvidia.com/cuda-toolkit) la cual es una plataforma de computación paralela que permite al software en el que se encuentre instalado el uso de la tarjeta de procesamiento gráfica.
 
-Por default este modelo esta pre entrenado para detecta 80 distintos objetos, la lista de estos se encuentra en el archivo [data/coco.names](https://github.com/puigalex/deteccion-objetos-video/blob/master/data/coco.names)
-
-Los pasos a seguir para poder correr detección de objetos en el video de una webcam son los siguientes (La creación del ambiente asume que Anaconda esta instalado en la computadora):
+Los pasos para poder correr el siguiente programa a través de un dron Tello (Para el desarrollo de este prototipo fue utilizada una Laptop con sistema operativo Ubuntu 22.04 y una tarjeta gráfica NVIDIA GeForce RTX 2070) son:
 
 # Crear ambiente
-Para tener en orden nuestras paqueterias de python primero vamos a crear un ambiente llamado "donatello" el cual tiene la version 3.6 de python
+Para tener en orden nuestras paqueterías de python primero vamos a crear un ambiente llamado "donatello" el cual tiene la versión 3.6 de python
 ``` 
 conda create -n donatello python=3.6
 ```
 
-Activamos el ambiente donatello para asegurarnos que estemos en el ambiente correcto al momento de hacer la instalación de todas las paqueterias necesarias
+Activamos el ambiente donatello para asegurarnos que estemos en el ambiente correcto al momento de hacer la instalación de todas las paqueterías necesarias
 ```
 source activate donatello
 ```
 
-# Instalación de las paqueterias
-Estando dentro de nuestro ambiente vamos a instalar todas las paqueterias necesarias para correr nuestro detector de objetos en video, la lista de los paqueter y versiones a instalar están dentro del archivo requirements.txt por lo cual instalaremos haciendo referencia a ese archivo
+# Instalación de las paqueterías
+Estando dentro de nuestro ambiente vamos a instalar todas las paqueterías necesarias para correr nuestro vision tracking drone, la lista de los paquetes y versiones a instalar están dentro del archivo requirements.txt por lo cual instalaremos haciendo referencia a ese archivo
 ```
 pip install -r requirements.txt
 ```
 
 # Descargar los pesos del modelo entrenado 
-Para poder correr el modelo de yolo tendremos que descargar los pesos de la red neuronal, los pesos son los valores que tienen todas las conexiones entre las neuronas de la red neuronal de YOLO, este tipo de modelos son computacionalmente muy pesados de entrenar desde cero por lo cual descargar el modelo pre entrenado es una buena opción.
+Para poder correr el modelo de YOLO tendremos que descargar los pesos de la red neuronal, los pesos son los valores que tienen todas las conexiones entre las neuronas de la red neuronal de YOLO, este tipo de modelos son computacionalmente muy pesados de entrenar desde cero por lo cual descargar el modelo pre entrenado es una buena opción.
 
 ```
-bash weights/download_weights.sh
+bash video_stream/weights/download_weights.sh
 ```
 
 Movemos los pesos descargados a la carpeta llamada weights
 ```
-mv yolov3.weights weights/
+mv yolov3.weights video_stream/weights/
 ```
 
-# Correr el detector de objetos en video 
-Por ultimo corremos este comando el cual activa la camara web para poder hacer deteccion de video sobre un video "en vivo"
+# Conexión del dron
+Conectar la computadora a la misma red del dron Tello
+
+# Correr la interfaz
+Utilizar el siguiente comando para correr la interfaz:
 ```
-python deteccion_video.py
+python manage.py runserver
 ```
+Entrar en su navegador de preferencia al link que arroja en la terminal, usualmente: 127.0.0.1:8000
 
-# Modificaciones
-Si en vez de correr detección de objetos sobre la webcam lo que quieres es correr el modelo sobre un video que ya fue pre grabado tienes que cambiar el comando para correr el codigo a:
+# Videos
+[Explicación](https://youtu.be/WRJ4od2K-6o)
 
-```
-python deteccion_video.py --webcam 0 --directorio_video <directorio_al_video.mp4>
-```
+[Demostración](https://youtu.be/dUZFRqen_c8)
 
-# Entrenamiento 
 
-Ahora, si lo que quieres es entrenar un modelo con las clases que tu quieras y no utilizar las 80 clases que vienen por default podemos entrenar nuestro propio modelo. Estos son los pasos que deberás seguir:
+¡GRACIAS por su interés y atención!
 
-Primero deberás etiquetar las imagenes con el formato VOC, aqui tengo un video explicando como hacer este etiquetado: 
+![interface-dron](https://user-images.githubusercontent.com/43561384/205850407-3d99bb4c-02f7-4a63-84f5-4e2840622dc4.png)
 
-Desde la carpeta config correremos el archivo create_custom_model para generar un archivo .cfg el cual contiene información sobre la red neuronal para correr las detecciones
-```
-cd config
-bash create_custom_model.sh <Numero_de_clases_a_detectar>
-cd ..
-```
-Descargamos la estructura de pesos de YOLO para poder hacer transfer learning sobre esos pesos
-```
-cd weights
-bash download_darknet.sh
-cd ..
-```
 
-## Poner las imagenes y archivos de metadata en las carpetar necesarias
-
-Las imagenes etiquetadas tienen que estar en el directorio **data/custom/images** mientras que las etiquetas/metadata de las imagenes tienen que estar en **data/custom/labels**.
-Por cada imagen.jpg debe de existir un imagen.txt (metadata con el mismo nombre de la imagen)
-
-El archivo ```data/custom/classes.names``` debe contener el nombre de las clases, como fueron etiquetadas, un renglon por clase.
-
-Los archivos ```data/custom/valid.txt``` y ```data/custom/train.txt``` deben contener la dirección donde se encuentran cada una de las imagenes. Estos se pueden generar con el siguiente comando (estando las imagenes ya dentro de ```data/custom/images```)
-```
-python split_train_val.py
-```
-
-## Entrenar
-
- ```
- python train.py --model_def config/yolov3-custom.cfg --data_config config/custom.data --pretrained_weights weights/darknet53.conv.74 --batch_size 2
- ```
-
-## Correr deteccion de objetos en video con nuestras clases
-```
-python deteccion_video.py --model_def config/yolov3-custom.cfg --checkpoint_model checkpoints/yolov3_ckpt_99.pth --class_path data/custom/classes.names  --weights_path checkpoints/yolov3_ckpt_99.pth  --conf_thres 0.85
-```
+# Referencias
+Este proyecto toma como base el siguiente [PyTorch YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3)
